@@ -134,7 +134,7 @@ print "Local IP".rjust(16),
 print "Int".rjust(5),
 print "CTX".rjust(8),
 print "CRX".rjust(8),
-print "Start".rjust(20),
+print "Duration".rjust(20),
 print ""
 for username in users:
   user = users[username]
