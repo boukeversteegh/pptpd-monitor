@@ -75,27 +75,27 @@ def getInterfaceTotals(interface):
 users = {}
 for sessionid, session in sessions.iteritems():
   users.setdefault(session['username'], {
-    "tx":		0,
-    "rx":		0,
-    "ctx":		0,
-    "crx":		0,
-    "total":		0,
-    "session":		None,
-    "sessions":		0,
-    "sessions_open":	0,
-    "ppp_remoteip4":	None,
-    "ppp_localip4":	None,
-    "ip4":		None,
-    "interface":	None,
-    "timestamp_open":	None
+    "tx":             0,
+    "rx":             0,
+    "ctx":            0,
+    "crx":            0,
+    "total":          0,
+    "session":        None,
+    "sessions":       0,
+    "sessions_open":  0,
+    "ppp_remoteip4":  None,
+    "ppp_localip4":   None,
+    "ip4":            None,
+    "interface":      None,
+    "timestamp_open": None
   })
   user = users[session['username']]
   
   # Current Session Open
   if session['status'] == 'open':
-    user['session'] = session
-    user['interface']		= session['interface']
-    user['ip4']			= session['ip4']
+    user['session']       = session
+    user['interface']     = session['interface']
+    user['ip4']           = session['ip4']
     user['ppp_remoteip4']	= session['ppp_remoteip4']
     
     ctx, crx = getInterfaceTotals(session['interface'])
@@ -134,7 +134,7 @@ print "Local IP".rjust(16),
 print "Int".rjust(5),
 print "CTX".rjust(8),
 print "CRX".rjust(8),
-print "Start".rjust(20),
+print "Duration".rjust(20),
 print ""
 for username in users:
   user = users[username]
@@ -145,8 +145,8 @@ for username in users:
   print str(username).ljust(15),
   print (str(user['sessions_open']) + "/" + str(user['sessions'])).rjust(6),
   #print str(user['sessions_open']).rjust(4),
-  print sizeof_fmt(user['tx']).rjust(8),
   print sizeof_fmt(user['rx']).rjust(8),
+  print sizeof_fmt(user['tx']).rjust(8),
   print str(user['ip4']).rjust(16),
   print str(user['ppp_remoteip4']).rjust(16),
   print str(user['interface']).rjust(5),
