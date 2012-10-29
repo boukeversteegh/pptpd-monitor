@@ -107,7 +107,7 @@ for sessionid, session in sessions.iteritems():
     user['ppp_remoteip4'] = '(' + str(session['ppp_remoteip4']) + ')'
     user['ip4'] = '(' + str(session['ip4']) + ')'
   # Totals
-  #user['lastseen'] = session['timestamp']
+  user['lastseen'] = session['timestamp_open']
   user['tx'] += session['tx']
   user['rx'] += session['rx']
   user['sessions'] += 1
@@ -134,7 +134,7 @@ print "Local IP".rjust(16),
 print "Int".rjust(5),
 print "CTX".rjust(8),
 print "CRX".rjust(8),
-print "Duration".rjust(20),
+print "Duration/Last seen".rjust(20),
 print ""
 for username in users:
   user = users[username]
@@ -156,6 +156,6 @@ for username in users:
     print str(now - user['timestamp_open']).rjust(20),
   #  print str(datetime.datetime.strptime(fmt_datetime, str(user['timestamp_open']))).rjust(20),
   except:
-    print "".rjust(20),
+    print str(user['lastseen']).rjust(20),
   print ""
 #print stats
