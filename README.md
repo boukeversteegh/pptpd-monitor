@@ -47,3 +47,5 @@ Note: Data retrieved or sent on behalf of the client is not shown in the statist
 > TotalUpload = `TX + RX`  
 > TotalDownload = `RX + TX`  
 > TotalBandwidth = ` 2 * (TX + RX)`
+
+![alt text](http://005.free-counters.co.uk/count-075.pl?count=few2094m88wdv1j0vllj&type=microblack&prog=unique "Counter")
