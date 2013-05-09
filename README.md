@@ -49,3 +49,4 @@ Note: Data retrieved or sent on behalf of the client is not shown in the statist
 > TotalBandwidth = ` 2 * (TX + RX)`
 
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/1939c6120f6944fa2ae66b717d773afa "githalytics.com")](http://githalytics.com/boukeversteegh/pptpd-monitor)
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/658e18105cfc7d693771f32aa3525817 "githalytics.com")](http://githalytics.com/CTassisF/pptpd-monitor)
