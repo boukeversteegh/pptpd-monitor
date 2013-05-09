@@ -20,73 +20,61 @@ logfile = "/var/log/messages"    # pptpd will log messages in here if debug is e
 fmt_timestamp = "%b %d %H:%M:%S" # Timestamp format as it appears in the logfile.
 now = datetime.now().replace(microsecond=0) # Current time, don't need microsecond accuracy.
 
-import random, os, glob, gzip
-
-tmp_logfile = "/tmp/messages" + "." + str(random.random())
-
-if os.path.isfile(tmp_logfile):
-  os.remove(tmp_logfile)
-
-for logfile in sorted(glob.glob(logfile + "*"), reverse = True):
-  if ".gz" in logfile:
-    logfile_data = gzip.open(logfile, "r").read()
-  else:
-    logfile_data = open(logfile, "r").read()
-  new_logfile = open(tmp_logfile, "a")
-  new_logfile.write(logfile_data)
-  new_logfile.close()
+import glob, gzip
 
 # Gather all session data from log
-for line in file(tmp_logfile):
-  line = line.strip()
-  match =  r_pptpd.search(line)
-  if match:
-    userid = match.group(1)
-
-    sessions.setdefault(userid, {
-      "interface":	None,
-      "username":	None,
-      "ip4":		None,
-      "ppp_remoteip4":	None,
-      "ppp_localip4":	None,
-      "total":		0,
-      "rx":		0,
-      "tx":		0,
-      "status":		None,
-      "timestamp_open":	None,
-    })
-    session = sessions[userid]
-
-    # Read remoteip4 from line and store in session
-    match = r_ppp_remoteip4.search(line)
+for logfile in sorted(glob.glob(logfile + "*"), reverse = True):
+  if ".gz" in logfile:
+    logfile_data = gzip.open(logfile, "r")
+  else:
+    logfile_data = open(logfile, "r")
+  for line in logfile_data:
+    line = line.strip()
+    match =  r_pptpd.search(line)
     if match:
-      session['ppp_remoteip4'] = match.group(1)
-    
-    # PPTP session started
-    m_ipup  = r_ipup.search(line)
-    if m_ipup:
-      timestamp = m_ipup.group(1)
-      interface	= m_ipup.group(2)
-      username	= m_ipup.group(3)
-      ip4	= m_ipup.group(4)
-      session['status']         = 'open'
-      session['timestamp_open']	= datetime.strptime(timestamp, fmt_timestamp).replace(year=datetime.now().year)
-      session['interface']	= interface
-      session['username']	= username
-      session['ip4']		= ip4
-    
-    # PPTP session closed
-    m_close = r_close.search(line)
-    if m_close:
-      tx = int(m_close.group(1))
-      rx = int(m_close.group(2))
-      session['status'] = 'closed'
-      session['tx']     += tx
-      session['rx']     += rx
-      session['total']  += tx + rx
+      userid = match.group(1)
 
-if os.path.isfile(tmp_logfile):
-  os.remove(tmp_logfile)
+      sessions.setdefault(userid, {
+        "interface":	None,
+        "username":	None,
+        "ip4":		None,
+        "ppp_remoteip4":	None,
+        "ppp_localip4":	None,
+        "total":		0,
+        "rx":		0,
+        "tx":		0,
+        "status":		None,
+        "timestamp_open":	None,
+      })
+      session = sessions[userid]
+
+      # Read remoteip4 from line and store in session
+      match = r_ppp_remoteip4.search(line)
+      if match:
+        session['ppp_remoteip4'] = match.group(1)
+    
+      # PPTP session started
+      m_ipup  = r_ipup.search(line)
+      if m_ipup:
+        timestamp = m_ipup.group(1)
+        interface	= m_ipup.group(2)
+        username	= m_ipup.group(3)
+        ip4	= m_ipup.group(4)
+        session['status']         = 'open'
+        session['timestamp_open']	= datetime.strptime(timestamp, fmt_timestamp).replace(year=datetime.now().year)
+        session['interface']	= interface
+        session['username']	= username
+        session['ip4']		= ip4
+    
+      # PPTP session closed
+      m_close = r_close.search(line)
+      if m_close:
+        tx = int(m_close.group(1))
+        rx = int(m_close.group(2))
+        session['status'] = 'closed'
+        session['tx']     += tx
+        session['rx']     += rx
+        session['total']  += tx + rx
 
 import os
 
