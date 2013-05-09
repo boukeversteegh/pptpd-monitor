@@ -20,8 +20,24 @@ logfile = "/var/log/messages"    # pptpd will log messages in here if debug is e
 fmt_timestamp = "%b %d %H:%M:%S" # Timestamp format as it appears in the logfile.
 now = datetime.now().replace(microsecond=0) # Current time, don't need microsecond accuracy.
 
+import random, os, glob, gzip
+
+tmp_logfile = "/tmp/messages" + "." + str(random.random())
+
+if os.path.isfile(tmp_logfile):
+  os.remove(tmp_logfile)
+
+for logfile in sorted(glob.glob(logfile + "*"), reverse = True):
+  if ".gz" in logfile:
+    logfile_data = gzip.open(logfile, "r").read()
+  else:
+    logfile_data = open(logfile, "r").read()
+  new_logfile = open(tmp_logfile, "a")
+  new_logfile.write(logfile_data)
+  new_logfile.close()
+
 # Gather all session data from log
-for line in file(logfile):
+for line in file(tmp_logfile):
   line = line.strip()
   match =  r_pptpd.search(line)
   if match:
@@ -68,6 +84,9 @@ for line in file(logfile):
       session['tx']     += tx
       session['rx']     += rx
       session['total']  += tx + rx
+
+if os.path.isfile(tmp_logfile):
+  os.remove(tmp_logfile)
 
 import os
 
