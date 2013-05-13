@@ -32,7 +32,7 @@ And you'll get output similar to this:
     *  mark              1/25  790.9MB  112.0MB       120.0.0.15     192.168.0.10  ppp0  107.7MB   21.0MB     4:12:51
        joe               0/15  624.0MB   27.2MB     (120.0.0.12)   (192.168.0.11)  None     0.0b     0.0b
 
-- `Username` = username of the client, defined in chap-secrets. Online users are marked with a *`
+- `Username` = username of the client, defined in chap-secrets. Online users are marked with a `*`
 - `#` = number of active connections/number of past closed connections
 - `TX` = total data sent to the client in the past
 - `RX` = total data received from the client in the past
@@ -47,6 +47,11 @@ Note: Data retrieved or sent on behalf of the client is not shown in the statist
 > TotalUpload = `TX + RX`  
 > TotalDownload = `RX + TX`  
 > TotalBandwidth = ` 2 * (TX + RX)`
+
+**Missing features**
+
+- Continuously monitoring active connections (now just use `watch`, but it is slow)
+- pptpd-monitor as importable module
 
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/1939c6120f6944fa2ae66b717d773afa "githalytics.com")](http://githalytics.com/boukeversteegh/pptpd-monitor)
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/658e18105cfc7d693771f32aa3525817 "githalytics.com")](http://githalytics.com/CTassisF/pptpd-monitor)
