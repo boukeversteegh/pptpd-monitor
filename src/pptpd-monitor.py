@@ -6,7 +6,7 @@ sessions = {}
 
 # Some regular expressions that match log entries
 # pptpd		pppd[<PID>]
-# ipup		<TIMESTAMP> ... pppd[PID]: ... ip-up <INTERFACE> <USERNAME> <IP4>
+# ipup		<TIMESTAMP> <HOSTNAME> pppd[PID]: ... ip-up <INTERFACE> <USERNAME> <IP4>
 # close		Sent <TX> bytes, received <RX> bytes
 # ppp_remoteip4	remote IP address <IP4>
 # ppp_localip4	local IP address <IP4>
