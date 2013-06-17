@@ -48,8 +48,8 @@ class Monitor:
 
 
   def process(self):
-    sessions = self.get_sessions()
-    users = self.get_userstats(sessions)
+    sessions	= self.get_sessions()
+    users	= self.get_userstats(sessions)
     self.print_userstats(users)
 
   def get_sessions(self):
@@ -64,10 +64,12 @@ class Monitor:
       print "Reading %s" % logfile,
       sys.stdout.flush()
       print "\r" + " " * (8+len(logfile)) + "\r",
+
       if ".gz" in logfile:
         logfile_data = gzip.open(logfile, "r")
       else:
         logfile_data = open(logfile, "r")
+
       for line in logfile_data:
         line = line.strip()
         match =  self.r_pptpd.search(line)
@@ -140,9 +142,10 @@ class Monitor:
         "timestamp_open": None
       })
       
+      user['session']       = session
+      
       # Current Session Open
       if session['status'] == 'open':
-        user['session']       = session
         user['interface']     = session['interface']
         user['ip4']           = session['ip4']
         user['ppp_remoteip4'] = session['ppp_remoteip4']
@@ -151,11 +154,6 @@ class Monitor:
         user['crx'] = crx
         user['ctx'] = ctx
         user['timestamp_open'] = session['timestamp_open']
-      
-      # Old Session (Put IP addresses in parens)
-      elif user['ppp_remoteip4'] is None:
-        user['ppp_remoteip4'] = '(' + str(session['ppp_remoteip4']) + ')'
-        user['ip4']           = '(' + str(session['ip4']) + ')'
       
       # Totals
       user['lastseen'] =  session['timestamp_open'] # Will be overwritten by each session until the last.
@@ -186,23 +184,35 @@ class Monitor:
     print ""
     for username in users:
       user = users[username]
+
+      if user['ppp_remoteip4']:
+        ppp_remoteip4 = user['ppp_remoteip4']
+        ip4 = user['ip4']
+      else:
+        ppp_remoteip4 = "(%s)" % user['session']['ppp_remoteip4']
+        ip4 = "(%s)" % user['session']['ip4']
+
       if user['sessions_open']:
         print "* ",
       else:
         print "  ",
+
       print str(username).ljust(15),
       print (str(user['sessions_open']) + "/" + str(user['sessions'])).rjust(6),
       print sizeof_fmt(user['rx']).rjust(8),
       print sizeof_fmt(user['tx']).rjust(8),
-      print str(user['ip4']).rjust(18),
-      print str(user['ppp_remoteip4']).rjust(18),
+      
+      print str(ip4).rjust(18),
+      print str(ppp_remoteip4).rjust(18),
       print str(user['interface']).rjust(5),
       print sizeof_fmt(user['ctx']).rjust(8),
       print sizeof_fmt(user['crx']).rjust(8),
+
       try:
         print str(now - user['timestamp_open']).rjust(20),
       except:
         print str(user['lastseen']).rjust(20),
+
       print ""
 
 if __name__ == "__main__":
