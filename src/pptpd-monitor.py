@@ -55,7 +55,12 @@ class Monitor:
   def get_sessions(self):
     sessions = {}
     # Gather all session data from log
-    for logfile in sorted(glob.glob(self.logfile + "*"), reverse = True):
+    if self.logrotate:
+      logfilefilter = self.logfile + "*"
+    else:
+      logfilefilter = self.logfile
+
+    for logfile in sorted(glob.glob(logfilefilter), reverse = True):
       print "Reading %s" % logfile,
       sys.stdout.flush()
       print "\r" + " " * (8+len(logfile)) + "\r",
