@@ -5,29 +5,44 @@ from datetime import datetime
 
 import glob, gzip, sys, os
 
+
+# Convert bytes to human readable format
+def sizeof_fmt(num):
+  for x in ['b','KB','MB','GB','TB','PB','EB','ZB']:
+    if num < 1024.0:
+      return "%3.1f%s" % (num, x)
+    num /= 1024.0
+  return "%3.1f%s" % (num, 'YB')
+
 class Monitor:
-  def __init__(self):
-  
-    self.sessions = {}
 
-    # Some regular expressions that match log entries
-    # pptpd		pppd[<PID>]
-    # ipup		<TIMESTAMP> ... pppd[PID]: ... ip-up <INTERFACE> <USERNAME> <IP4>
-    # close		Sent <TX> bytes, received <RX> bytes
-    # ppp_remoteip4	remote IP address <IP4>
-    # ppp_localip4	local IP address <IP4>
-    self.r_pptpd	= re.compile(r"pppd\[(\d+)\]")
-    self.r_ipup		= re.compile(r"(.+?) [a-zA-Z0-9\-\.]+ pppd\[\d+\]: pptpd-logwtmp.so ip-up ([a-z0-9]+) ([a-z]+) (\d+\.\d+\.\d+\.\d+)")
-    self.r_close	= re.compile(r"Sent (\d+) bytes, received (\d+) bytes")
-    self.r_ppp_remoteip4= re.compile(r"remote IP address (\d+\.\d+\.\d+\.\d+)")
-    self.r_ppp_localip4	= re.compile(r"local IP address (\d+\.\d+\.\d+\.\d+)")
+  # Some regular expressions that match log entries
+  # pptpd		pppd[<PID>]
+  # ipup		<TIMESTAMP> ... pppd[PID]: ... ip-up <INTERFACE> <USERNAME> <IP4>
+  # close		Sent <TX> bytes, received <RX> bytes
+  # ppp_remoteip4	remote IP address <IP4>
+  # ppp_localip4	local IP address <IP4>
+  r_pptpd		= re.compile(r"pppd\[(\d+)\]")
+  r_ipup		= re.compile(r"(.+?) [a-zA-Z0-9\-\.]+ pppd\[\d+\]: pptpd-logwtmp.so ip-up ([a-z0-9]+) ([a-z]+) (\d+\.\d+\.\d+\.\d+)")
+  r_close		= re.compile(r"Sent (\d+) bytes, received (\d+) bytes")
+  r_ppp_remoteip4	= re.compile(r"remote IP address (\d+\.\d+\.\d+\.\d+)")
+  r_ppp_localip4	= re.compile(r"local IP address (\d+\.\d+\.\d+\.\d+)")
 
-    self.logfile = "/var/log/messages"    # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
-    self.fmt_timestamp = "%b %d %H:%M:%S" # Timestamp format as it appears in the logfile.
+  logfile	= "/var/log/messages"    # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
+  fmt_timestamp	= "%b %d %H:%M:%S" # Timestamp format as it appears in the logfile.
+
+  def __init__(self, logrotate=True):
+    self.logrotate = logrotate
     self.now = datetime.now().replace(microsecond=0) # Current time, don't need microsecond accuracy.
 
 
   def process(self):
+    sessions = self.get_sessions()
+    users = self.get_userstats(sessions)
+    self.print_userstats(users)
+
+  def get_sessions(self):
+    sessions = {}
     # Gather all session data from log
     for logfile in sorted(glob.glob(self.logfile + "*"), reverse = True):
       print "Reading %s" % logfile,
@@ -43,7 +58,7 @@ class Monitor:
         if match:
           userid = match.group(1)
     
-          self.sessions.setdefault(userid, {
+          sessions.setdefault(userid, {
             "interface":	None,
             "username":		None,
             "ip4":		None,
@@ -55,7 +70,7 @@ class Monitor:
             "status":		None,
             "timestamp_open":	None,
           })
-          session = self.sessions[userid]
+          session = sessions[userid]
 
           # Read remoteip4 from line and store in session
           match = self.r_ppp_remoteip4.search(line)
@@ -84,21 +99,22 @@ class Monitor:
             session['tx']     += tx
             session['rx']     += rx
             session['total']  += tx + rx
+    return sessions
     
-    
-    # Gets TX-RX for a network interface, for example ppp0
-    # This is used to get statistics on active sessions
-    def getInterfaceTotals(interface):
-      result = os.popen("ifconfig " + interface, "r")
-      r_ipconfig = re.compile(r"RX bytes:(\d+) .+  TX bytes:(\d+)")
-      for line in result:
-        m_ipconfig = self.r_ipconfig.search(line)
-        if m_ipconfig:
-          return (int(m_ipconfig.group(2)), int(m_ipconfig.group(1)))
-        
+  # Gets TX-RX for a network interface, for example ppp0
+  # This is used to get statistics on active sessions
+  def getInterfaceTotals(self, interface):
+    result = os.popen("ifconfig " + interface, "r")
+    r_ipconfig = re.compile(r"RX bytes:(\d+) .+  TX bytes:(\d+)")
+    for line in result:
+      m_ipconfig = self.r_ipconfig.search(line)
+      if m_ipconfig:
+        return (int(m_ipconfig.group(2)), int(m_ipconfig.group(1)))
+
+  def get_userstats(self, sessions):
     # Gather statistics per user
     users = {}
-    for sessionid, session in self.sessions.iteritems():
+    for sessionid, session in sessions.iteritems():
       username = session['username']
       # Get userdata or set defaults
       user = users.setdefault(username, {
@@ -144,15 +160,10 @@ class Monitor:
       if session['status'] == "open":
         user['sessions_open'] += 1
     
-    # Convert bytes to human readable format
-    def sizeof_fmt(num):
-        for x in ['b','KB','MB','GB','TB','PB','EB','ZB']:
-            if num < 1024.0:
-                return "%3.1f%s" % (num, x)
-            num /= 1024.0
-        return "%3.1f%s" % (num, 'YB')
     
-    
+    return users 
+
+  def print_userstats(self, users):
     print "PPTPD Client Statistics"
     print ""
     print "Username".ljust(18),
