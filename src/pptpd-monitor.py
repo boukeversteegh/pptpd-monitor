@@ -182,7 +182,7 @@ class Monitor:
     print "CRX".rjust(8),
     print "Duration/Last seen".rjust(20),
     print ""
-    for username in users:
+    for username in sorted(users.keys()):
       user = users[username]
 
       if user['ppp_remoteip4']:
