@@ -14,6 +14,17 @@ def sizeof_fmt(num):
     num /= 1024.0
   return "%3.1f%s" % (num, 'YB')
 
+
+# Gets TX-RX for a network interface, for example ppp0
+# This is used to get statistics on active sessions
+def getInterfaceTotals(interface):
+  result = os.popen("ifconfig " + interface, "r")
+  r_ipconfig = re.compile(r"RX bytes:(\d+) .+  TX bytes:(\d+)")
+  for line in result:
+    m_ipconfig = self.r_ipconfig.search(line)
+    if m_ipconfig:
+      return (int(m_ipconfig.group(2)), int(m_ipconfig.group(1)))
+
 class Monitor:
 
   # Some regular expressions that match log entries
@@ -101,15 +112,6 @@ class Monitor:
             session['total']  += tx + rx
     return sessions
     
-  # Gets TX-RX for a network interface, for example ppp0
-  # This is used to get statistics on active sessions
-  def getInterfaceTotals(self, interface):
-    result = os.popen("ifconfig " + interface, "r")
-    r_ipconfig = re.compile(r"RX bytes:(\d+) .+  TX bytes:(\d+)")
-    for line in result:
-      m_ipconfig = self.r_ipconfig.search(line)
-      if m_ipconfig:
-        return (int(m_ipconfig.group(2)), int(m_ipconfig.group(1)))
 
   def get_userstats(self, sessions):
     # Gather statistics per user
