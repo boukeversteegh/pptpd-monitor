@@ -21,7 +21,7 @@ def getInterfaceTotals(interface):
   result = os.popen("ifconfig " + interface, "r")
   r_ipconfig = re.compile(r"RX bytes:(\d+) .+  TX bytes:(\d+)")
   for line in result:
-    m_ipconfig = self.r_ipconfig.search(line)
+    m_ipconfig = r_ipconfig.search(line)
     if m_ipconfig:
       return (int(m_ipconfig.group(2)), int(m_ipconfig.group(1)))
 
@@ -34,7 +34,7 @@ class Monitor:
   # ppp_remoteip4	remote IP address <IP4>
   # ppp_localip4	local IP address <IP4>
   r_pptpd		= re.compile(r"pppd\[(\d+)\]")
-  r_ipup		= re.compile(r"(.+?) [a-zA-Z0-9\-\.]+ pppd\[\d+\]: pptpd-logwtmp.so ip-up ([a-z0-9]+) ([a-z]+) (\d+\.\d+\.\d+\.\d+)")
+  r_ipup		= re.compile(r"(.+?) [a-zA-Z0-9\-\.]+ pppd\[\d+\]: pptpd-logwtmp.so ip-up ([a-z0-9]+) ([a-zA-Z0-9]+) (\d+\.\d+\.\d+\.\d+)")
   r_close		= re.compile(r"Sent (\d+) bytes, received (\d+) bytes")
   r_ppp_remoteip4	= re.compile(r"remote IP address (\d+\.\d+\.\d+\.\d+)")
   r_ppp_localip4	= re.compile(r"local IP address (\d+\.\d+\.\d+\.\d+)")
