@@ -74,9 +74,9 @@ class Monitor:
         line = line.strip()
         match =  self.r_pptpd.search(line)
         if match:
-          userid = match.group(1)
+          pid = match.group(1)
     
-          sessions.setdefault(userid, {
+          sessions.setdefault(pid, {
             "interface":	None,
             "username":		None,
             "ip4":		None,
@@ -88,7 +88,7 @@ class Monitor:
             "status":		None,
             "timestamp_open":	None,
           })
-          session = sessions[userid]
+          session = sessions[pid]
 
           # Read remoteip4 from line and store in session
           match = self.r_ppp_remoteip4.search(line)
@@ -123,7 +123,7 @@ class Monitor:
   def get_userstats(self, sessions):
     # Gather statistics per user
     users = {}
-    for sessionid, session in sessions.iteritems():
+    for pid, session in sessions.iteritems():
       username = session['username']
       # Get userdata or set defaults
       user = users.setdefault(username, {
