@@ -34,8 +34,8 @@ class Monitor:
   # ppp_remoteip4	remote IP address <IP4>
   # ppp_localip4	local IP address <IP4>
   r_pptpd		= re.compile(r"pppd\[(\d+)\]")
-  r_ipup		= re.compile(r"(.+?) [a-zA-Z0-9\-\.]+ pppd\[\d+\]: pptpd-logwtmp.so ip-up ([a-z0-9]+) ([a-zA-Z0-9]+) (\d+\.\d+\.\d+\.\d+)")
-  r_close		= re.compile(r"Sent (\d+) bytes, received (\d+) bytes")
+  r_ppp_ipup		= re.compile(r"(.+?) [a-zA-Z0-9\-\.]+ pppd\[\d+\]: pptpd-logwtmp.so ip-up ([a-z0-9]+) ([a-zA-Z0-9]+) (\d+\.\d+\.\d+\.\d+)")
+  r_ppp_close		= re.compile(r"Sent (\d+) bytes, received (\d+) bytes")
   r_ppp_remoteip4	= re.compile(r"remote IP address (\d+\.\d+\.\d+\.\d+)")
   r_ppp_localip4	= re.compile(r"local IP address (\d+\.\d+\.\d+\.\d+)")
 
@@ -74,6 +74,7 @@ class Monitor:
         line = line.strip()
         match =  self.r_pptpd.search(line)
         if match:
+          # Logdata is grouped by PID
           pid = match.group(1)
     
           sessions.setdefault(pid, {
@@ -96,7 +97,7 @@ class Monitor:
             session['ppp_remoteip4'] = match.group(1)
         
           # PPTP session started
-          m_ipup  = self.r_ipup.search(line)
+          m_ipup  = self.r_ppp_ipup.search(line)
           if m_ipup:
             timestamp	= m_ipup.group(1)
             interface	= m_ipup.group(2)
@@ -109,7 +110,7 @@ class Monitor:
             session['ip4']		= ip4
         
           # PPTP session closed
-          m_close = self.r_close.search(line)
+          m_close = self.r_ppp_close.search(line)
           if m_close:
             tx = int(m_close.group(1))
             rx = int(m_close.group(2))
