@@ -38,7 +38,8 @@ class Monitor:
   r_ppp_close		= re.compile(r"Sent (\d+) bytes, received (\d+) bytes")
   r_ppp_remoteip4	= re.compile(r"remote IP address (\d+\.\d+\.\d+\.\d+)")
   r_ppp_localip4	= re.compile(r"local IP address (\d+\.\d+\.\d+\.\d+)")
-
+  r_ppp_exit		= re.compile(r"Exit.")
+  
   logfile	= "/var/log/messages"    # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
   fmt_timestamp	= "%b %d %H:%M:%S" # Timestamp format as it appears in the logfile.
 
@@ -54,6 +55,8 @@ class Monitor:
 
   def get_sessions(self):
     sessions = {}
+    sessionlist = []
+    
     # Gather all session data from log
     if self.logrotate:
       logfilefilter = self.logfile + "*"
@@ -76,7 +79,8 @@ class Monitor:
         if match:
           # Logdata is grouped by PID
           pid = match.group(1)
-    
+          newconnection = (pid not in sessions)
+
           sessions.setdefault(pid, {
             "interface":	None,
             "username":		None,
@@ -90,6 +94,9 @@ class Monitor:
             "timestamp_open":	None,
           })
           session = sessions[pid]
+          
+          if newconnection:
+            sessionlist.append(session)
 
           # Read remoteip4 from line and store in session
           match = self.r_ppp_remoteip4.search(line)
@@ -118,13 +125,22 @@ class Monitor:
             session['tx']     += tx
             session['rx']     += rx
             session['total']  += tx + rx
-    return sessions
+          
+          m_exit = self.r_ppp_exit.search(line)
+          if m_exit:
+            # After process exits, remove PID from sessions
+            # because same PID will be used again
+            # (after long uptime, or reboot)
+            # and we dont want stats to be merged!
+            del sessions[pid]
+
+    return sessionlist
     
 
   def get_userstats(self, sessions):
     # Gather statistics per user
     users = {}
-    for pid, session in sessions.iteritems():
+    for session in sessions:
       username = session['username']
       # Get userdata or set defaults
       user = users.setdefault(username, {
