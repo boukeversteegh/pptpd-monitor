@@ -17,7 +17,7 @@ Simply run the script:
 
 Use watch, for example:
 
-    watch --interval=1 -t -d ./src/pptpd-monitor.py
+    watch -n 1 ./src/pptpd-monitor.py
 
 And you'll get output similar to this:
 
@@ -53,5 +53,5 @@ Note: Data retrieved or sent on behalf of the client is not shown in the statist
 - Continuously monitoring active connections (now just use `watch`, but it is slow)
 - pptpd-monitor as importable module
 
-[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/1939c6120f6944fa2ae66b717d773afa "githalytics.com")](http://githalytics.com/boukeversteegh/pptpd-monitor)
-[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/658e18105cfc7d693771f32aa3525817 "githalytics.com")](http://githalytics.com/CTassisF/pptpd-monitor)
+**Known issues:**
+- ppp-debugging mode logs every single transmitted packet (pptpd issue)
