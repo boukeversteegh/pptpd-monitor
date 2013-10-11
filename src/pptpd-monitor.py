@@ -51,16 +51,17 @@ class Monitor:
     self.logfile   = logfile
     self.logrotate = logrotate
     self.now = datetime.now().replace(microsecond=0) # Current time, don't need microsecond accuracy.
+    self.activesessions = {}
 
 
   def process(self):
-    sessions	= self.get_sessions()
-    users	= self.get_userstats(sessions)
-    self.print_userstats(users)
+    sessions    = self.get_sessions()
+    userstats   = self.get_userstats(sessions)
+    self.print_userstats(userstats)
 
   def get_sessions(self):
-    sessions = {}
-    sessionlist = []
+    activesessions	= self.activesessions
+    sessionlist		= []
     
     # Gather all session data from log
     if self.logrotate:
@@ -80,67 +81,74 @@ class Monitor:
 
       for line in logfile_data:
         line = line.strip()
-        match =  self.r_pptpd.search(line)
-        if match:
-          # Logdata is grouped by PID
-          pid = match.group(1)
-          newconnection = (pid not in sessions)
-
-          sessions.setdefault(pid, {
-            "interface":	None,
-            "username":		None,
-            "ip4":		None,
-            "ppp_remoteip4":	None,
-            "ppp_localip4":	None,
-            "total":		0,
-            "rx":		0,
-            "tx":		0,
-            "status":		None,
-            "timestamp_open":	None,
-          })
-          session = sessions[pid]
-          
-          if newconnection:
-            sessionlist.append(session)
-
-          # Read remoteip4 from line and store in session
-          match = self.r_ppp_remoteip4.search(line)
-          if match:
-            session['ppp_remoteip4'] = match.group(1)
-        
-          # PPTP session started
-          m_ipup  = self.r_ppp_ipup.search(line)
-          if m_ipup:
-            timestamp	= m_ipup.group(1)
-            interface	= m_ipup.group(2)
-            username	= m_ipup.group(3)
-            ip4	= m_ipup.group(4)
-            session['status']         = 'open'
-            session['timestamp_open']	= datetime.strptime(timestamp, self.fmt_timestamp).replace(year=datetime.now().year)
-            session['interface']	= interface
-            session['username']		= username
-            session['ip4']		= ip4
-        
-          # PPTP session closed
-          m_close = self.r_ppp_close.search(line)
-          if m_close:
-            tx = int(m_close.group(1))
-            rx = int(m_close.group(2))
-            session['status'] = 'closed'
-            session['tx']     += tx
-            session['rx']     += rx
-            session['total']  += tx + rx
-          
-          m_exit = self.r_ppp_exit.search(line)
-          if m_exit:
-            # After process exits, remove PID from sessions
-            # because same PID will be used again
-            # (after long uptime, or reboot)
-            # and we dont want stats to be merged!
-            del sessions[pid]
-
+        self.process_line(line, activesessions, sessionlist)
+    self.lastfile = logfile_data
     return sessionlist
+
+  def update_sessions(self):
     
+  
+  def process_line(self, line, activesessions, sessionlist):
+    match =  self.r_pptpd.search(line)
+    if match:
+      # Logdata is grouped by PID
+      pid = match.group(1)
+      newconnection = (pid not in activesessions)
+    
+      activesessions.setdefault(pid, {
+        "interface":      None,
+        "username":       None,
+        "ip4":            None,
+        "ppp_remoteip4":  None,
+        "ppp_localip4":   None,
+        "total":          0,
+        "rx":             0,
+        "tx":             0,
+        "status":         None,
+        "timestamp_open": None,
+      })
+      session = activesessions[pid]
+      
+      if newconnection:
+        sessionlist.append(session)
+    
+      # Read remoteip4 from line and store in session
+      match = self.r_ppp_remoteip4.search(line)
+      if match:
+        session['ppp_remoteip4'] = match.group(1)
+
+      # PPTP session started
+      m_ipup  = self.r_ppp_ipup.search(line)
+      if m_ipup:
+        timestamp	= m_ipup.group(1)
+        interface	= m_ipup.group(2)
+        username	= m_ipup.group(3)
+        ip4	= m_ipup.group(4)
+        session['status']         = 'open'
+        session['timestamp_open']	= datetime.strptime(timestamp, self.fmt_timestamp).replace(year=datetime.now().year)
+        session['interface']	= interface
+        session['username']		= username
+        session['ip4']		= ip4
+    
+      # PPTP session closed
+      m_close = self.r_ppp_close.search(line)
+      if m_close:
+        tx = int(m_close.group(1))
+        rx = int(m_close.group(2))
+        session['status'] = 'closed'
+        session['tx']     += tx
+        session['rx']     += rx
+        session['total']  += tx + rx
+      
+      m_exit = self.r_ppp_exit.search(line)
+      if m_exit:
+        # After process exits, remove PID from sessions
+        # because same PID will be used again
+        # (after long uptime, or reboot)
+        # and we dont want stats to be merged!
+        del activesessions[pid]
+
+   
 
   def get_userstats(self, sessions):
     # Gather statistics per user
