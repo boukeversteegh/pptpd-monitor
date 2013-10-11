@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import re
+import re, subprocess
 from datetime import datetime
 
 import glob, gzip, sys, os
@@ -18,27 +18,32 @@ def sizeof_fmt(num):
 # Gets TX-RX for a network interface, for example ppp0
 # This is used to get statistics on active sessions
 def getInterfaceTotals(interface):
-  result = os.popen("ifconfig " + interface, "r")
+  DEVNULL  = open(os.devnull, 'w')
+  command  = "ifconfig " + interface, "r"
+  process  = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=DEVNULL, shell=True)
+  result   = process.communicate()
+  
   r_ipconfig = re.compile(r"RX bytes:(\d+) .+  TX bytes:(\d+)")
-  for line in result:
+  for line in result[0].split('\n'):
     m_ipconfig = r_ipconfig.search(line)
     if m_ipconfig:
       return (int(m_ipconfig.group(2)), int(m_ipconfig.group(1)))
+  return (0, 0)
 
 class Monitor:
 
   # Some regular expressions that match log entries
-  # pptpd		pppd[<PID>]
-  # ipup		<TIMESTAMP> ... pppd[PID]: ... ip-up <INTERFACE> <USERNAME> <IP4>
-  # close		Sent <TX> bytes, received <RX> bytes
-  # ppp_remoteip4	remote IP address <IP4>
-  # ppp_localip4	local IP address <IP4>
-  r_pptpd		= re.compile(r"pppd\[(\d+)\]")
-  r_ppp_ipup		= re.compile(r"(.+?) [a-zA-Z0-9\-\.]+ pppd\[\d+\]: pptpd-logwtmp.so ip-up ([a-z0-9]+) ([a-zA-Z0-9]+) (\d+\.\d+\.\d+\.\d+)")
-  r_ppp_close		= re.compile(r"Sent (\d+) bytes, received (\d+) bytes")
-  r_ppp_remoteip4	= re.compile(r"remote IP address (\d+\.\d+\.\d+\.\d+)")
-  r_ppp_localip4	= re.compile(r"local IP address (\d+\.\d+\.\d+\.\d+)")
-  r_ppp_exit		= re.compile(r"Exit.")
+  # pptpd               pppd[<PID>]
+  # ipup                <TIMESTAMP> ... pppd[PID]: ... ip-up <INTERFACE> <USERNAME> <IP4>
+  # close               Sent <TX> bytes, received <RX> bytes
+  # ppp_remoteip4       remote IP address <IP4>
+  # ppp_localip4        local IP address <IP4>
+  r_pptpd               = re.compile(r"pppd\[(\d+)\]")
+  r_ppp_ipup            = re.compile(r"(.+?) [a-zA-Z0-9\-\.]+ pppd\[\d+\]: pptpd-logwtmp.so ip-up ([a-z0-9]+) ([a-zA-Z0-9]+) (\d+\.\d+\.\d+\.\d+)")
+  r_ppp_close           = re.compile(r"Sent (\d+) bytes, received (\d+) bytes")
+  r_ppp_remoteip4       = re.compile(r"remote IP address (\d+\.\d+\.\d+\.\d+)")
+  r_ppp_localip4        = re.compile(r"local IP address (\d+\.\d+\.\d+\.\d+)")
+  r_ppp_exit            = re.compile(r"Exit.")
   
   logfile	= "/var/log/syslog"    # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
   fmt_timestamp	= "%b %d %H:%M:%S" # Timestamp format as it appears in the logfile.
