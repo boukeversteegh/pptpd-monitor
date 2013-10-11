@@ -40,7 +40,7 @@ class Monitor:
   r_ppp_localip4	= re.compile(r"local IP address (\d+\.\d+\.\d+\.\d+)")
   r_ppp_exit		= re.compile(r"Exit.")
   
-  logfile	= "/var/log/messages"    # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
+  logfile	= "/var/log/syslog"    # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
   fmt_timestamp	= "%b %d %H:%M:%S" # Timestamp format as it appears in the logfile.
 
   def __init__(self, logrotate=True):
