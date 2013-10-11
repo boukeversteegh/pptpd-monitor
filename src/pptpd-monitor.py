@@ -45,10 +45,10 @@ class Monitor:
   r_ppp_localip4        = re.compile(r"local IP address (\d+\.\d+\.\d+\.\d+)")
   r_ppp_exit            = re.compile(r"Exit.")
   
-  logfile	= "/var/log/syslog"    # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
   fmt_timestamp	= "%b %d %H:%M:%S" # Timestamp format as it appears in the logfile.
 
-  def __init__(self, logrotate=True):
+  def __init__(self, logfile, logrotate=True):
+    self.logfile   = logfile
     self.logrotate = logrotate
     self.now = datetime.now().replace(microsecond=0) # Current time, don't need microsecond accuracy.
 
@@ -238,5 +238,8 @@ class Monitor:
       print ""
 
 if __name__ == "__main__":
-	monitor = Monitor()
-	monitor.process()
+  logfile   = "/var/log/syslog"    # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
+  logfile   = "/home/bouke/vpnlog"
+  logrotate = False
+  monitor = Monitor(logfile, logrotate)
+  monitor.process()
