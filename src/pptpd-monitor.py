@@ -3,7 +3,7 @@
 import re, subprocess
 from datetime import datetime
 
-import glob, gzip, sys, os
+import glob, gzip, sys, os, time
 
 
 # Convert bytes to human readable format
@@ -52,12 +52,25 @@ class Monitor:
     self.logrotate = logrotate
     self.now = datetime.now().replace(microsecond=0) # Current time, don't need microsecond accuracy.
     self.activesessions = {}
+    self.lastfile = None
 
+  def monitor(self, interval=0):
+    sessionlist  = self.get_sessions()
+    userstats    = self.get_userstats(sessionlist)
+    fstring      = self.format_userstats(userstats)
+    print fstring,
 
-  def process(self):
-    sessions    = self.get_sessions()
-    userstats   = self.get_userstats(sessions)
-    self.print_userstats(userstats)
+    if interval is 0:
+      return
+
+    time.sleep(interval)
+    while True:
+      self.update_sessions(self.activesessions, sessionlist)
+      userstats = self.get_userstats(sessionlist)
+      # Clear previous stats
+      print (fstring.count('\n') * '\033[1A') + len(fstring.split('\n')[0])*' ' + '\r',
+      print self.format_userstats(userstats),
+      time.sleep(interval)
 
   def get_sessions(self):
     activesessions	= self.activesessions
@@ -69,7 +82,11 @@ class Monitor:
     else:
       logfilefilter = self.logfile
 
+    logfile_data = None
     for logfile in sorted(glob.glob(logfilefilter), reverse = True):
+      if logfile_data:
+        logfile_data.close()
+
       print "Reading %s" % logfile,
       sys.stdout.flush()
       print "\r" + " " * (8+len(logfile)) + "\r",
@@ -85,8 +102,11 @@ class Monitor:
     self.lastfile = logfile_data
     return sessionlist
 
-  def update_sessions(self):
-    
+  def update_sessions(self, activesessions, sessionlist):
+    self.lastfile.seek(self.lastfile.tell())
+    for line in self.lastfile:
+      line = line.strip()
+      self.process_line(line, activesessions, sessionlist)
   
   def process_line(self, line, activesessions, sessionlist):
     match =  self.r_pptpd.search(line)
@@ -198,20 +218,21 @@ class Monitor:
     
     return users 
 
-  def print_userstats(self, users):
-    print "PPTPD Client Statistics"
-    print ""
-    print "Username".ljust(18),
-    print "#".rjust(6),
-    print "TX".rjust(8),
-    print "RX".rjust(8),
-    print "Remote IP".rjust(18),
-    print "Local IP".rjust(18),
-    print "Int".rjust(5),
-    print "CTX".rjust(8),
-    print "CRX".rjust(8),
-    print "Duration/Last seen".rjust(20),
-    print ""
+  def format_userstats(self, users):
+    fstring = ""
+    fstring += "PPTPD Client Statistics\n"
+    fstring += "\n"
+    fstring += "Username".ljust(17)
+    fstring += "#".rjust(6)
+    fstring += "TX".rjust(8)
+    fstring += "RX".rjust(8)
+    fstring += "Remote IP".rjust(18)
+    fstring += "Local IP".rjust(18)
+    fstring += "Int".rjust(5)
+    fstring += "CTX".rjust(8)
+    fstring += "CRX".rjust(8)
+    fstring += "Duration/Last seen".rjust(20)
+    fstring += "\n"
     for username in sorted(users.keys()):
       user = users[username]
 
@@ -223,31 +244,48 @@ class Monitor:
         ip4 = "(%s)" % user['session']['ip4']
 
       if user['sessions_open']:
-        print "* ",
+        fstring += "* "
       else:
-        print "  ",
+        fstring += "  "
 
-      print str(username).ljust(15),
-      print (str(user['sessions_open']) + "/" + str(user['sessions'])).rjust(6),
-      print sizeof_fmt(user['rx']).rjust(8),
-      print sizeof_fmt(user['tx']).rjust(8),
+      fstring += str(username).ljust(15)
+      fstring += (str(user['sessions_open']) + "/" + str(user['sessions'])).rjust(6)
+      fstring += sizeof_fmt(user['rx']).rjust(8)
+      fstring += sizeof_fmt(user['tx']).rjust(8)
       
-      print str(ip4).rjust(18),
-      print str(ppp_remoteip4).rjust(18),
-      print str(user['interface']).rjust(5),
-      print sizeof_fmt(user['ctx']).rjust(8),
-      print sizeof_fmt(user['crx']).rjust(8),
+      fstring += str(ip4).rjust(18)
+      fstring += str(ppp_remoteip4).rjust(18)
+      fstring += str(user['interface']).rjust(5)
+      fstring += sizeof_fmt(user['ctx']).rjust(8)
+      fstring += sizeof_fmt(user['crx']).rjust(8)
 
       try:
-        print str(now - user['timestamp_open']).rjust(20),
+        fstring += str(now - user['timestamp_open']).rjust(20)
       except:
-        print str(user['lastseen']).rjust(20),
+        fstring += str(user['lastseen']).rjust(20)
 
-      print ""
+      fstring += "\n"
+    return fstring
 
 if __name__ == "__main__":
-  logfile   = "/var/log/syslog"    # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
-  logfile   = "/home/bouke/vpnlog"
+  # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
+  logfile   = "/var/log/syslog"
   logrotate = False
+
+  if '--help' in sys.argv or '-h' in sys.argv:
+    print 'pptpd-monitor.py [OPTIONS]\n', \
+          '\n', \
+          '  -h,--help      Show help\n', \
+          '  --watch        Continuously update\n', \
+          '  --rotate       Include logrotated files (*.gz)'
+    sys.exit(0)
+
+  if '--rotate' in sys.argv:
+    logrotate = True
+    
   monitor = Monitor(logfile, logrotate)
-  monitor.process()
+
+  if '--watch' in sys.argv:
+    monitor.monitor(interval=1)
+  else:
+    monitor.monitor()
