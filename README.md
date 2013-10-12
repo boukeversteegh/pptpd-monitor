@@ -17,6 +17,10 @@ Simply run the script:
 
     ./src/pptpd-monitor.py --watch
 
+**Include logrotated data**
+
+    ./src/pptpd-monitor.py --rotate
+
 And you'll get output similar to this:
 
     PPTPD Client Statistics
