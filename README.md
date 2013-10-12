@@ -15,9 +15,7 @@ Simply run the script:
 
 **Continuously monitor**
 
-Use watch, for example:
-
-    watch -n 1 ./src/pptpd-monitor.py
+    ./src/pptpd-monitor.py --watch
 
 And you'll get output similar to this:
 
@@ -41,17 +39,22 @@ And you'll get output similar to this:
 - `Int` = interface created for this client. Try `ifconfig ppp0` to see data for that interface.
 - `CTX`, `RTX` = data sent to and received from the client in current connection
 
-If you don't have `debug` enabled, statistics will be gathered under `None`.
+If client authentication fails, or if you don't have `debug` enabled,  statistics will be gathered under `None`.
 
 Note: Data retrieved or sent on behalf of the client is not shown in the statistics. Basically, data sent to the client is first retrieved on behalf of the client, so the total bandwidth for one client would be:
 > TotalUpload = `TX + RX`  
 > TotalDownload = `RX + TX`  
 > TotalBandwidth = ` 2 * (TX + RX)`
 
+
+**New features**
+- Continuously monitoring active connections
+
 **Missing features**
 
-- Continuously monitoring active connections (now just use `watch`, but it is slow)
-- pptpd-monitor as importable module
+*You're welcome to contribute!*
+- Option for choosing logfile. `/var/log/syslog` by default.
+- Option for choosing interval speed for `--watch`.
 
 **Known issues:**
 - ppp-debugging mode logs every single transmitted packet (pptpd issue)
