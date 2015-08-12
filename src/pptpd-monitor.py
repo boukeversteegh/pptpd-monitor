@@ -39,7 +39,7 @@ class Monitor:
   # ppp_remoteip4       remote IP address <IP4>
   # ppp_localip4        local IP address <IP4>
   r_pptpd               = re.compile(r"pppd\[(\d+)\]")
-  r_ppp_ipup            = re.compile(r"(.+?) [a-zA-Z0-9\-\.]+ pppd\[\d+\]: pptpd-logwtmp.so ip-up ([a-z0-9]+) ([a-zA-Z0-9]+) (\d+\.\d+\.\d+\.\d+)")
+  r_ppp_ipup            = re.compile(r"(.+?) [a-zA-Z0-9\-\.]+ pppd\[\d+\]: pptpd-logwtmp.so ip-up ([a-z0-9]+) ([^\s]+) (\d+\.\d+\.\d+\.\d+)")
   r_ppp_close           = re.compile(r"Sent (\d+) bytes, received (\d+) bytes")
   r_ppp_remoteip4       = re.compile(r"remote IP address (\d+\.\d+\.\d+\.\d+)")
   r_ppp_localip4        = re.compile(r"local IP address (\d+\.\d+\.\d+\.\d+)")
