@@ -58,7 +58,6 @@ Note: Data retrieved or sent on behalf of the client is not shown in the statist
 
 *You're welcome to contribute!*
 - Option for choosing logfile. `/var/log/syslog` by default.
-- Option for choosing interval speed for `--watch`.
 
 **Known issues:**
 - ppp-debugging mode logs every single transmitted packet (pptpd issue)
