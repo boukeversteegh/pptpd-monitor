@@ -90,17 +90,23 @@ class Monitor:
       print "Reading %s" % logfile,
       sys.stdout.flush()
       print "\r" + " " * (8+len(logfile)) + "\r",
-
-      if ".gz" in logfile:
-        logfile_data = gzip.open(logfile, "r")
-      else:
-        logfile_data = open(logfile, "r")
-
-      for line in logfile_data:
-        line = line.strip()
-        self.process_line(line, activesessions, sessionlist)
-    self.lastfile = logfile_data
-    return sessionlist
+      try:
+        if ".gz" in logfile:
+          logfile_data = gzip.open(logfile, "r")
+        else:
+          logfile_data = open(logfile, "r")
+        for line in logfile_data:
+          line = line.strip()
+          self.process_line(line, activesessions, sessionlist)
+      except IOError:
+        if os.path.exists(logfile):
+          print 'Failed to read file ' + logfile + ', insufficient permissions?'
+          sys.exit(1) # error, so non-zero return code
+        else:
+          print 'Failed to read file ' + logfile + ", file doesn't exist?"
+          sys.exit(1) # error, so non-zero return code
+      self.lastfile = logfile_data
+      return sessionlist
 
   def update_sessions(self, activesessions, sessionlist):
     self.lastfile.seek(self.lastfile.tell())
@@ -271,28 +277,28 @@ if __name__ == "__main__":
   # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
   logfile   = "/var/log/syslog"
   logrotate = False
-  seconds = 1.0
 
   if '--help' in sys.argv or '-h' in sys.argv:
     print 'pptpd-monitor.py [OPTIONS]\n', \
           '\n', \
           '  -h,--help      Show help\n', \
           '  --watch        Continuously update\n', \
-          '  -n <sec>       Update every n seconds', \
+          '  --log <path>   Use file at path instead of the default\n', \
           '  --rotate       Include logrotated files (*.gz)'
     sys.exit(0)
-  
+
+  if '--log' in sys.argv:
+    if not os.path.isfile(sys.argv[sys.argv.index('--log') + 1]):
+      print "File doesn't exist or is not a regular file, falling back to default"
+    else:
+      logfile=sys.argv[sys.argv.index('--log') + 1]
+
   if '--rotate' in sys.argv:
     logrotate = True
     
   monitor = Monitor(logfile, logrotate)
 
   if '--watch' in sys.argv:
-    if '-n' in sys.argv:
-      try:
-        seconds = float(sys.argv[sys.argv.index('-n') + 1])
-      except ValueError:
-        print 'Non-parseable parameter found after -n, falling back to default'
-    monitor.monitor(interval = seconds)
+    monitor.monitor(interval=1)
   else:
     monitor.monitor()
