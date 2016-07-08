@@ -271,21 +271,28 @@ if __name__ == "__main__":
   # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
   logfile   = "/var/log/syslog"
   logrotate = False
+  seconds = 1.0
 
   if '--help' in sys.argv or '-h' in sys.argv:
     print 'pptpd-monitor.py [OPTIONS]\n', \
           '\n', \
           '  -h,--help      Show help\n', \
           '  --watch        Continuously update\n', \
+          '  -n <sec>       Update every n seconds', \
           '  --rotate       Include logrotated files (*.gz)'
     sys.exit(0)
-
+  
   if '--rotate' in sys.argv:
     logrotate = True
     
   monitor = Monitor(logfile, logrotate)
 
   if '--watch' in sys.argv:
-    monitor.monitor(interval=1)
+    if '-n' in sys.argv:
+      try:
+        seconds = float(sys.argv[sys.argv.index('-n') + 1])
+      except ValueError:
+        print 'Non-parseable parameter found after -n, falling back to default'
+    monitor.monitor(interval = seconds)
   else:
     monitor.monitor()
