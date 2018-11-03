@@ -4,7 +4,13 @@ import re, subprocess
 from datetime import datetime
 
 import glob, gzip, sys, os, time
+import argparse
 
+parser = argparse.ArgumentParser(description='Monitor the PPTP server.')
+parser.add_argument('-w','--watch',action='store_true',help='monitor continuously')
+parser.add_argument('-d','--delay',type=float,help='the interval for value monitoring, has no effect if --watch is not present')
+parser.add_argument('-f','--file',type=argparse.FileType('r'),default=None)
+parser.add_argument('-r','--rotate',action='store_true',help='also include logrotated (*.gz) files')
 
 # Convert bytes to human readable format
 def sizeof_fmt(num):
@@ -22,7 +28,7 @@ def getInterfaceTotals(interface):
   command  = "ifconfig " + interface, "r"
   process  = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=DEVNULL, shell=True)
   result   = process.communicate()
-  
+
   r_ipconfig = re.compile(r"RX bytes:(\d+) .+  TX bytes:(\d+)")
   for line in result[0].split('\n'):
     m_ipconfig = r_ipconfig.search(line)
@@ -44,7 +50,7 @@ class Monitor:
   r_ppp_remoteip4       = re.compile(r"remote IP address (\d+\.\d+\.\d+\.\d+)")
   r_ppp_localip4        = re.compile(r"local IP address (\d+\.\d+\.\d+\.\d+)")
   r_ppp_exit            = re.compile(r"Exit.")
-  
+
   fmt_timestamp	= "%b %d %H:%M:%S" # Timestamp format as it appears in the logfile.
 
   def __init__(self, logfile, logrotate=True):
@@ -75,7 +81,7 @@ class Monitor:
   def get_sessions(self):
     activesessions	= self.activesessions
     sessionlist		= []
-    
+
     # Gather all session data from log
     if self.logrotate:
       logfilefilter = self.logfile + "*"
@@ -113,14 +119,14 @@ class Monitor:
     for line in self.lastfile:
       line = line.strip()
       self.process_line(line, activesessions, sessionlist)
-  
+
   def process_line(self, line, activesessions, sessionlist):
     match =  self.r_pptpd.search(line)
     if match:
       # Logdata is grouped by PID
       pid = match.group(1)
       newconnection = (pid not in activesessions)
-    
+
       activesessions.setdefault(pid, {
         "interface":      None,
         "username":       None,
@@ -134,10 +140,10 @@ class Monitor:
         "timestamp_open": None,
       })
       session = activesessions[pid]
-      
+
       if newconnection:
         sessionlist.append(session)
-    
+
       # Read remoteip4 from line and store in session
       match = self.r_ppp_remoteip4.search(line)
       if match:
@@ -155,7 +161,7 @@ class Monitor:
         session['interface']	= interface
         session['username']		= username
         session['ip4']		= ip4
-    
+
       # PPTP session closed
       m_close = self.r_ppp_close.search(line)
       if m_close:
@@ -165,7 +171,7 @@ class Monitor:
         session['tx']     += tx
         session['rx']     += rx
         session['total']  += tx + rx
-      
+
       m_exit = self.r_ppp_exit.search(line)
       if m_exit:
         # After process exits, remove PID from sessions
@@ -174,7 +180,7 @@ class Monitor:
         # and we dont want stats to be merged!
         del activesessions[pid]
 
-   
+
 
   def get_userstats(self, sessions):
     # Gather statistics per user
@@ -197,32 +203,32 @@ class Monitor:
         "interface":      None,
         "timestamp_open": None
       })
-      
+
       user['session']       = session
-      
+
       # Current Session Open
       if session['status'] == 'open':
         user['interface']     = session['interface']
         user['ip4']           = session['ip4']
         user['ppp_remoteip4'] = session['ppp_remoteip4']
-        
+
         ctx, crx = getInterfaceTotals(session['interface'])
         user['crx'] = crx
         user['ctx'] = ctx
         user['timestamp_open'] = session['timestamp_open']
-      
+
       # Totals
       user['lastseen'] =  session['timestamp_open'] # Will be overwritten by each session until the last.
       user['tx']       += session['tx']
       user['rx']       += session['rx']
       user['sessions'] += 1
       user['total']    += session['tx'] + session['rx']
-      
+
       if session['status'] == "open":
         user['sessions_open'] += 1
-    
-    
-    return users 
+
+
+    return users
 
   def format_userstats(self, users):
     fstring = ""
@@ -258,7 +264,7 @@ class Monitor:
       fstring += (str(user['sessions_open']) + "/" + str(user['sessions'])).rjust(6)
       fstring += sizeof_fmt(user['rx']).rjust(8)
       fstring += sizeof_fmt(user['tx']).rjust(8)
-      
+
       fstring += str(ip4).rjust(18)
       fstring += str(ppp_remoteip4).rjust(18)
       fstring += str(user['interface']).rjust(5)
@@ -274,31 +280,17 @@ class Monitor:
     return fstring
 
 if __name__ == "__main__":
-  # pptpd will log messages in here if debug is enabled (/etc/ppp/pptpd-options)
-  logfile   = "/var/log/syslog"
-  logrotate = False
+  args = parser.parse_args()
+  logfile   = args.file
+  if logfile is None:
+      logfile = '/var/log/syslog'
+  else:
+      logfile = logfile.file
+  logrotate = args.rotate
 
-  if '--help' in sys.argv or '-h' in sys.argv:
-    print 'pptpd-monitor.py [OPTIONS]\n', \
-          '\n', \
-          '  -h,--help      Show help\n', \
-          '  --watch        Continuously update\n', \
-          '  --log <path>   Use file at path instead of the default\n', \
-          '  --rotate       Include logrotated files (*.gz)'
-    sys.exit(0)
-
-  if '--log' in sys.argv:
-    if not os.path.isfile(sys.argv[sys.argv.index('--log') + 1]):
-      print "File doesn't exist or is not a regular file, falling back to default"
-    else:
-      logfile=sys.argv[sys.argv.index('--log') + 1]
-
-  if '--rotate' in sys.argv:
-    logrotate = True
-    
   monitor = Monitor(logfile, logrotate)
 
-  if '--watch' in sys.argv:
-    monitor.monitor(interval=1)
+  if args.watch:
+    monitor.monitor(interval=args.delay)
   else:
     monitor.monitor()
