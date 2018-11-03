@@ -24,7 +24,7 @@ Simply run the script:
 And you'll get output similar to this:
 
     PPTPD Client Statistics
-    
+
     Username                #       TX       RX        Remote IP         Local IP   Int      CTX      CRX    Duration
        None              0/61  585.4MB   94.8MB           (None)   (192.168.0.10)  None     0.0b     0.0b
        john               0/6  111.8MB   29.9MB    (100.0.0.179)   (192.168.0.11)  None     0.0b     0.0b
@@ -57,7 +57,7 @@ Note: Data retrieved or sent on behalf of the client is not shown in the statist
 **Missing features**
 
 *You're welcome to contribute!*
-- Option for choosing interval speed for `--watch`.
+- [ ]
 
 **Known issues:**
 - ppp-debugging mode logs every single transmitted packet (pptpd issue)
