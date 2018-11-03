@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import re, subprocess
 from datetime import datetime
@@ -64,7 +64,7 @@ class Monitor:
     sessionlist  = self.get_sessions()
     userstats    = self.get_userstats(sessionlist)
     fstring      = self.format_userstats(userstats)
-    print fstring,
+    print(fstring, end=' ')
 
     if interval is 0:
       return
@@ -74,8 +74,8 @@ class Monitor:
       self.update_sessions(self.activesessions, sessionlist)
       userstats = self.get_userstats(sessionlist)
       # Clear previous stats
-      print (fstring.count('\n') * '\033[1A') + len(fstring.split('\n')[0])*' ' + '\r',
-      print self.format_userstats(userstats),
+      print((fstring.count('\n') * '\033[1A') + len(fstring.split('\n')[0])*' ' + '\r', end=' ')
+      print(self.format_userstats(userstats), end=' ')
       time.sleep(interval)
 
   def get_sessions(self):
@@ -93,9 +93,9 @@ class Monitor:
       if logfile_data:
         logfile_data.close()
 
-      print "Reading %s" % logfile,
+      print("Reading %s" % logfile, end=' ')
       sys.stdout.flush()
-      print "\r" + " " * (8+len(logfile)) + "\r",
+      print("\r" + " " * (8+len(logfile)) + "\r", end=' ')
       try:
         if ".gz" in logfile:
           logfile_data = gzip.open(logfile, "r")
@@ -106,10 +106,10 @@ class Monitor:
           self.process_line(line, activesessions, sessionlist)
       except IOError:
         if os.path.exists(logfile):
-          print 'Failed to read file ' + logfile + ', insufficient permissions?'
+          print('Failed to read file ' + logfile + ', insufficient permissions?')
           sys.exit(1) # error, so non-zero return code
         else:
-          print 'Failed to read file ' + logfile + ", file doesn't exist?"
+          print('Failed to read file ' + logfile + ", file doesn't exist?")
           sys.exit(1) # error, so non-zero return code
       self.lastfile = logfile_data
       return sessionlist
