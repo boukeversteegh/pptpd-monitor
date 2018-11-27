@@ -3,6 +3,11 @@ pptpd-monitor
 
 Tool for monitoring PPTPD (VPN) connections and traffic.
 
+**Requirements**
+
+- PPTPD
+- Python3
+
 **Enable debug logging on pptpd**
 
 Make sure your PPTPD server has debug logging enabled. Add a line with the text `debug` to `/etc/ppp/pptpd-options`. No need to restart, your next connection will log details to the log.
