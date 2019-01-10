@@ -17,6 +17,10 @@ Make sure your PPTPD server has debug logging enabled. Add a line with the text 
 Simply run the script:
 
     ./src/pptpd-monitor.py
+    
+Or if your python location is not in `/usr/bin/python3`
+
+    python3 src/pptpd-monitor.py
 
 **Continuously monitor**
 
