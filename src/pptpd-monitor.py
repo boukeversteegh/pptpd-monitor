@@ -7,10 +7,10 @@ import glob, gzip, sys, os, time
 import argparse
 
 parser = argparse.ArgumentParser(description='Monitor the PPTP server.')
-parser.add_argument('-w','--watch',action='store_true',help='monitor continuously')
-parser.add_argument('-d','--delay',type=float,help='the interval for value monitoring, has no effect if --watch is not present')
-parser.add_argument('-f','--file',type=argparse.FileType('r'),default=None)
-parser.add_argument('-r','--rotate',action='store_true',help='also include logrotated (*.gz) files')
+parser.add_argument('-w', '--watch', action='store_true', help='monitor continuously')
+parser.add_argument('-d', '--delay', type=float, help='the interval for value monitoring, has no effect if --watch is not present')
+parser.add_argument('-f', '--file', type=argparse.FileType('r'), default='/var/log/syslog', help='location of pptpd logfile')
+parser.add_argument('-r', '--rotate', action='store_true', help='also include logrotated (*.gz) files')
 
 # Convert bytes to human readable format
 def sizeof_fmt(num):
@@ -113,6 +113,10 @@ class Monitor:
           sys.exit(1) # error, so non-zero return code
       self.lastfile = logfile_data
       return sessionlist
+    else:
+      print("Could not read logfile '%s', please specify a logfile. See:" % logfilefilter)
+      print("python3 pptpd-monitor.py --help")
+      sys.exit(1)
 
   def update_sessions(self, activesessions, sessionlist):
     self.lastfile.seek(self.lastfile.tell())
@@ -281,11 +285,7 @@ class Monitor:
 
 if __name__ == "__main__":
   args = parser.parse_args()
-  logfile   = args.file
-  if logfile is None:
-      logfile = '/var/log/syslog'
-  else:
-      logfile = logfile.file
+  logfile = args.file.file
   logrotate = args.rotate
 
   monitor = Monitor(logfile, logrotate)
