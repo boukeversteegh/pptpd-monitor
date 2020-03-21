@@ -285,7 +285,7 @@ class Monitor:
 
 if __name__ == "__main__":
   args = parser.parse_args()
-  logfile = args.file.file
+  logfile = args.file.name
   logrotate = args.rotate
 
   monitor = Monitor(logfile, logrotate)
