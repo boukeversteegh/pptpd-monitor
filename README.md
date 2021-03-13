@@ -6,7 +6,7 @@ Tool for monitoring PPTPD (VPN) connections and traffic.
 **Requirements**
 
 - PPTPD
-- Python 3.6
+- Python 3.6 - 3.8.5
 
 **Enable debug logging on pptpd**
 
