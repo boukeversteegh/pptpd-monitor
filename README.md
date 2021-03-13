@@ -3,6 +3,11 @@ pptpd-monitor
 
 Tool for monitoring PPTPD (VPN) connections and traffic.
 
+> ⚠️ **Warning** - The PPTP protocol is known to have [several security vulnerabilities](https://en.wikipedia.org/wiki/Point-to-Point_Tunneling_Protocol#Security). Please inform yourself, as I'm not a security expert. A more secure alternative is [SoftEther VPN](https://www.softether.org/).
+> 
+> ⚠️ **警告** - PPTP协议已知具有多个安全漏洞，请你自己研究。 [SoftEther VPN](https://www.softether.org/)是更安全的替代方案。
+
+
 **Requirements**
 
 - PPTPD
